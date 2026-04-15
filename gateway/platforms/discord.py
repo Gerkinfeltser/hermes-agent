@@ -2476,6 +2476,22 @@ class DiscordAdapter(BasePlatformAdapter):
         _parent_id = str(getattr(_chan, "parent_id", "") or "")
         _chan_id = str(getattr(_chan, "id", ""))
         _skills = self._resolve_channel_skills(_chan_id, _parent_id or None)
+
+        # Resolve the parent message content for reply context.
+        # discord.py pre-caches `resolved` for messages in the same channel,
+        # so this typically requires no extra API call.
+        reply_to_text: Optional[str] = None
+        if message.reference and getattr(message.reference, "resolved", None):
+            resolved = message.reference.resolved
+            if hasattr(resolved, "content"):
+                reply_to_text = resolved.content or None
+        logger.debug(
+            "[Discord] reply_to_text=%r for message %s (reference=%s, resolved=%s)",
+            reply_to_text, message.id,
+            getattr(message.reference, "message_id", None) if message.reference else None,
+            type(getattr(message.reference, "resolved", None)).name if message.reference else None,
+        )
+
         event = MessageEvent(
             text=event_text,
             message_type=msg_type,
@@ -2485,6 +2501,7 @@ class DiscordAdapter(BasePlatformAdapter):
             media_urls=media_urls,
             media_types=media_types,
             reply_to_message_id=str(message.reference.message_id) if message.reference else None,
+            reply_to_text=reply_to_text,
             timestamp=message.created_at,
             auto_skill=_skills,
         )
