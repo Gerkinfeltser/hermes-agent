@@ -2481,6 +2481,7 @@ class DiscordAdapter(BasePlatformAdapter):
         # discord.py pre-caches `resolved` for messages in the same channel,
         # so this typically requires no extra API call.
         reply_to_text: Optional[str] = None
+        logger.info("[Discord] reference check: reference=%r guild_id=%r", message.reference, getattr(getattr(message.channel, "guild", None), "id", None))
         if message.reference and getattr(message.reference, "resolved", None):
             resolved = message.reference.resolved
             if hasattr(resolved, "content"):
