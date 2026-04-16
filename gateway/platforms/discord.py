@@ -2488,6 +2488,7 @@ class DiscordAdapter(BasePlatformAdapter):
         # Fallback for thread messages created via "Create Thread" — they have no
         # reference but `thread.message_id` points to the originating post.
         thread_op_id = getattr(message.channel, "message_id", None) if is_thread else None
+        logger.info("[Discord] thread_op_id=%r is_thread=%r reply_to_text=%r", thread_op_id, is_thread, reply_to_text)
         if not reply_to_text and thread_op_id:
             try:
                 op_msg = await message.channel.fetch_message(thread_op_id)
