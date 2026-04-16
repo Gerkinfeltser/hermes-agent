@@ -2509,6 +2509,10 @@ class DiscordAdapter(BasePlatformAdapter):
                     if msgs:
                         op_msg = msgs[0]
                         reply_to_text = op_msg.content or None
+                        # Fallback: extract text from embed description (webhook posts)
+                        if not reply_to_text and op_msg.embeds:
+                            embed = op_msg.embeds[0]
+                            reply_to_text = getattr(embed, "description", None) or None
                         logger.info("[Discord] thread OP fetched via history: id=%s content=%r", op_msg.id, reply_to_text)
                 except Exception as e:
                     logger.warning("[Discord] thread OP fetch failed (history): %s", e)
