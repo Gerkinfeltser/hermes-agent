@@ -2489,7 +2489,9 @@ class DiscordAdapter(BasePlatformAdapter):
         # reference but `thread.message_id` points to the originating post.
         # For webhook-sourced threads, thread.message_id is None (Discord limitation),
         # so we fall back to fetching the thread's own history and getting the first msg.
-        thread_op_id = getattr(message.channel, "message_id", None) if is_thread else None
+        thread_op_id: Optional[str] = None
+        if is_thread:
+            thread_op_id = getattr(message.channel, "message_id", None)
         if not reply_to_text and is_thread:
             if thread_op_id:
                 try:
@@ -2498,6 +2500,8 @@ class DiscordAdapter(BasePlatformAdapter):
                     if not reply_to_text and op_msg.embeds:
                         embed = op_msg.embeds[0]
                         reply_to_text = getattr(embed, "description", None) or None
+                    if reply_to_text:
+                        thread_op_id = str(op_msg.id)
                     logger.info("[Discord] thread OP fetched via message_id: id=%s content=%r", op_msg.id, reply_to_text)
                 except Exception as e:
                     logger.warning("[Discord] thread OP fetch failed (message_id): %s", e)
@@ -2523,6 +2527,8 @@ class DiscordAdapter(BasePlatformAdapter):
                             op_msg = m
                             reply_to_text = text
                             break
+                    if reply_to_text and op_msg:
+                        thread_op_id = str(op_msg.id)
                     logger.info(
                         "[Discord] thread OP via history: checked=%d first_text_id=%s content=%r",
                         len(msgs),
@@ -2549,7 +2555,7 @@ class DiscordAdapter(BasePlatformAdapter):
             message_id=str(message.id),
             media_urls=media_urls,
             media_types=media_types,
-            reply_to_message_id=str(message.reference.message_id) if message.reference else None,
+            reply_to_message_id=str(message.reference.message_id) if message.reference else thread_op_id,
             reply_to_text=reply_to_text,
             timestamp=message.created_at,
             auto_skill=_skills,
