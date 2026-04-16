@@ -2501,7 +2501,7 @@ class DiscordAdapter(BasePlatformAdapter):
             else:
                 # Webhook thread: message_id is None, fetch history and get first msg
                 try:
-                    hist = await message.channel.history(limit=5, oldest_first=True).flatten()
+                    hist = await message.channel.history(limit=5, oldest_first=True).get_many(5)
                     if hist:
                         op_msg = hist[0]
                         reply_to_text = op_msg.content or None
