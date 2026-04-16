@@ -2487,12 +2487,14 @@ class DiscordAdapter(BasePlatformAdapter):
                 reply_to_text = resolved.content or None
         # Fallback for thread messages created via "Create Thread" — they have no
         # reference but `thread.message_id` points to the originating post.
-        if not reply_to_text and is_thread and getattr(message.channel, "message_id", None):
+        thread_op_id = getattr(message.channel, "message_id", None) if is_thread else None
+        if not reply_to_text and thread_op_id:
             try:
-                op_msg = await message.channel.fetch_message(message.channel.message_id)
+                op_msg = await message.channel.fetch_message(thread_op_id)
                 reply_to_text = op_msg.content or None
-            except Exception:
-                pass
+                logger.info("[Discord] thread OP fetched: id=%s content=%r", op_msg.id, reply_to_text)
+            except Exception as e:
+                logger.warning("[Discord] thread OP fetch failed: %s", e)
         logger.info(
             "[Discord] msg_id=%s reference=%s resolved_type=%s reply_to_text=%r is_thread=%s",
             message.id,
