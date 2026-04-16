@@ -2487,15 +2487,27 @@ class DiscordAdapter(BasePlatformAdapter):
                 reply_to_text = resolved.content or None
         # Fallback for thread messages created via "Create Thread" — they have no
         # reference but `thread.message_id` points to the originating post.
+        # For webhook-sourced threads, thread.message_id is None (Discord limitation),
+        # so we fall back to fetching the thread's own history and getting the first msg.
         thread_op_id = getattr(message.channel, "message_id", None) if is_thread else None
-        logger.info("[Discord] thread_op_id=%r is_thread=%r reply_to_text=%r", thread_op_id, is_thread, reply_to_text)
-        if not reply_to_text and thread_op_id:
-            try:
-                op_msg = await message.channel.fetch_message(thread_op_id)
-                reply_to_text = op_msg.content or None
-                logger.info("[Discord] thread OP fetched: id=%s content=%r", op_msg.id, reply_to_text)
-            except Exception as e:
-                logger.warning("[Discord] thread OP fetch failed: %s", e)
+        if not reply_to_text and is_thread:
+            if thread_op_id:
+                try:
+                    op_msg = await message.channel.fetch_message(thread_op_id)
+                    reply_to_text = op_msg.content or None
+                    logger.info("[Discord] thread OP fetched via message_id: id=%s content=%r", op_msg.id, reply_to_text)
+                except Exception as e:
+                    logger.warning("[Discord] thread OP fetch failed (message_id): %s", e)
+            else:
+                # Webhook thread: message_id is None, fetch history and get first msg
+                try:
+                    hist = await message.channel.history(limit=5, oldest_first=True).flatten()
+                    if hist:
+                        op_msg = hist[0]
+                        reply_to_text = op_msg.content or None
+                        logger.info("[Discord] thread OP fetched via history: id=%s content=%r", op_msg.id, reply_to_text)
+                except Exception as e:
+                    logger.warning("[Discord] thread OP fetch failed (history): %s", e)
         logger.info(
             "[Discord] msg_id=%s reference=%s resolved_type=%s reply_to_text=%r is_thread=%s",
             message.id,
