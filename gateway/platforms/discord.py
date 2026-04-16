@@ -2512,6 +2512,7 @@ class DiscordAdapter(BasePlatformAdapter):
                     if msgs:
                         op_msg = msgs[0]
                         reply_to_text = op_msg.content or None
+                        logger.info("[Discord] op_msg embeds=%r", getattr(op_msg, "embeds", None))
                         # Fallback: extract text from embed description (webhook posts)
                         if not reply_to_text and op_msg.embeds:
                             embed = op_msg.embeds[0]
