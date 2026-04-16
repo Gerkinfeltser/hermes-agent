@@ -2485,12 +2485,21 @@ class DiscordAdapter(BasePlatformAdapter):
             resolved = message.reference.resolved
             if hasattr(resolved, "content"):
                 reply_to_text = resolved.content or None
+        # Fallback for thread messages created via "Create Thread" — they have no
+        # reference but `thread.message_id` points to the originating post.
+        if not reply_to_text and is_thread and getattr(message.channel, "message_id", None):
+            try:
+                op_msg = await message.channel.fetch_message(message.channel.message_id)
+                reply_to_text = op_msg.content or None
+            except Exception:
+                pass
         logger.info(
-            "[Discord] msg_id=%s reference=%s resolved_type=%s reply_to_text=%r",
+            "[Discord] msg_id=%s reference=%s resolved_type=%s reply_to_text=%r is_thread=%s",
             message.id,
             getattr(message.reference, "message_id", None) if message.reference else None,
             type(getattr(message.reference, "resolved", None)).name if message.reference else None,
             reply_to_text,
+            is_thread,
         )
 
 
