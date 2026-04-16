@@ -2485,6 +2485,13 @@ class DiscordAdapter(BasePlatformAdapter):
             resolved = message.reference.resolved
             if hasattr(resolved, "content"):
                 reply_to_text = resolved.content or None
+        logger.info(
+            "[Discord] msg_id=%s reference=%s resolved_type=%s reply_to_text=%r",
+            message.id,
+            getattr(message.reference, "message_id", None) if message.reference else None,
+            type(getattr(message.reference, "resolved", None)).name if message.reference else None,
+            reply_to_text,
+        )
 
 
         event = MessageEvent(
