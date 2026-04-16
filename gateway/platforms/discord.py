@@ -2495,6 +2495,9 @@ class DiscordAdapter(BasePlatformAdapter):
                 try:
                     op_msg = await message.channel.fetch_message(thread_op_id)
                     reply_to_text = op_msg.content or None
+                    if not reply_to_text and op_msg.embeds:
+                        embed = op_msg.embeds[0]
+                        reply_to_text = getattr(embed, "description", None) or None
                     logger.info("[Discord] thread OP fetched via message_id: id=%s content=%r", op_msg.id, reply_to_text)
                 except Exception as e:
                     logger.warning("[Discord] thread OP fetch failed (message_id): %s", e)
