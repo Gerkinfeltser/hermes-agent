@@ -2505,19 +2505,30 @@ class DiscordAdapter(BasePlatformAdapter):
                 # Webhook thread: message_id is None, fetch history and get first msg
                 try:
                     msgs = []
-                    async for m in message.channel.history(limit=5, oldest_first=True):
+                    async for m in message.channel.history(limit=10, oldest_first=True):
                         msgs.append(m)
-                        if len(msgs) >= 5:
+                    # Iterate to find the first message with actual text content.
+                    # The first message may be a Discord system message (thread creation
+                    # notice) with empty content and no embeds — skip those.
+                    # Also skip the current message itself (it appears in history).
+                    reply_to_text = None
+                    op_msg = None
+                    for m in msgs:
+                        if m.id == message.id:
+                            continue
+                        text = m.content or None
+                        if not text and m.embeds:
+                            text = getattr(m.embeds[0], "description", None) or None
+                        if text:
+                            op_msg = m
+                            reply_to_text = text
                             break
-                    if msgs:
-                        op_msg = msgs[0]
-                        reply_to_text = op_msg.content or None
-                        logger.info("[Discord] op_msg embeds=%r", getattr(op_msg, "embeds", None))
-                        # Fallback: extract text from embed description (webhook posts)
-                        if not reply_to_text and op_msg.embeds:
-                            embed = op_msg.embeds[0]
-                            reply_to_text = getattr(embed, "description", None) or None
-                        logger.info("[Discord] thread OP fetched via history: id=%s content=%r", op_msg.id, reply_to_text)
+                    logger.info(
+                        "[Discord] thread OP via history: checked=%d first_text_id=%s content=%r",
+                        len(msgs),
+                        op_msg.id if op_msg else None,
+                        reply_to_text,
+                    )
                 except Exception as e:
                     logger.warning("[Discord] thread OP fetch failed (history): %s", e)
         logger.info(
