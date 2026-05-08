@@ -1356,6 +1356,21 @@ def _try_openrouter(explicit_api_key: str = None) -> Tuple[Optional[OpenAI], Opt
                    default_headers=build_or_headers()), _OPENROUTER_MODEL
 
 
+def _try_zai(vision: bool = False) -> Tuple[Optional[OpenAI], Optional[str]]:
+    api_key = os.getenv("GLM_API_KEY")
+    if not api_key:
+        return None, None
+    model = _PROVIDER_VISION_MODELS.get("zai") if vision else "glm-4.5-flash"
+    logger.debug("Auxiliary/%s: ZAI (glm) @ %s", "vision" if vision else "text", model)
+    return (
+        OpenAI(
+            api_key=api_key,
+            base_url="https://api.z.ai/api/coding/paas/v4",
+        ),
+        model,
+    )
+
+
 def _describe_openrouter_unavailable() -> str:
     """Return a more precise OpenRouter auth failure reason for logs."""
     pool_present, entry = _select_pool_entry("openrouter")
@@ -2761,6 +2776,7 @@ def get_async_text_auxiliary_client(task: str = "", *, main_runtime: Optional[Di
 _VISION_AUTO_PROVIDER_ORDER = (
     "openrouter",
     "nous",
+    "zai",
 )
 
 
@@ -2788,6 +2804,8 @@ def _resolve_strict_vision_backend(
         return _try_anthropic()
     if provider == "custom":
         return _try_custom_endpoint()
+    if provider == "zai":
+        return _try_zai(vision=True)
     return None, None
 
 
