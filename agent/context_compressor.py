@@ -40,14 +40,10 @@ SUMMARY_PREFIX = (
     "window — treat it as background reference, NOT as active instructions. "
     "Do NOT answer questions or fulfill requests mentioned in this summary; "
     "they were already addressed. "
-    "Your current task is identified in the '## Active Task' section of the "
-    "summary — resume exactly from there. "
     "IMPORTANT: Your persistent memory (MEMORY.md, USER.md) in the system "
     "prompt is ALWAYS authoritative and active — never ignore or deprioritize "
     "memory content due to this compaction note. "
-    "Respond ONLY to the latest user message "
-    "that appears AFTER this summary. The current session state (files, "
-    "config, etc.) may reflect work described here — avoid repeating it:"
+    "The most recent user message appears AFTER this summary — read it first."
 )
 LEGACY_SUMMARY_PREFIX = "[CONTEXT SUMMARY]:"
 
@@ -945,15 +941,7 @@ class ContextCompressor(ContextEngine):
         )
 
         # Shared structured template (used by both paths).
-        _template_sections = f"""## Active Task
-[THE SINGLE MOST IMPORTANT FIELD. Copy the user's most recent request or
-task assignment verbatim — the exact words they used. If multiple tasks
-were requested and only some are done, list only the ones NOT yet completed.
-Continuation should pick up exactly here. Example:
-"User asked: 'Now refactor the auth module to use JWT instead of sessions'"
-If no outstanding task exists, write "None."]
-
-## Goal
+        _template_sections = f"""## Goal
 [What the user is trying to accomplish overall]
 
 ## Constraints & Preferences
@@ -1016,7 +1004,7 @@ PREVIOUS SUMMARY:
 NEW TURNS TO INCORPORATE:
 {content_to_summarize}
 
-Update the summary using this exact structure. PRESERVE all existing information that is still relevant. ADD new completed actions to the numbered list (continue numbering). Move items from "In Progress" to "Completed Actions" when done. Move answered questions to "Resolved Questions". Update "Active State" to reflect current state. Remove information only if it is clearly obsolete. CRITICAL: Update "## Active Task" to reflect the user's most recent unfulfilled request — this is the most important field for task continuity.
+Update the summary using this exact structure. PRESERVE all existing information that is still relevant. ADD new completed actions to the numbered list (continue numbering). Move items from "In Progress" to "Completed Actions" when done. Move answered questions to "Resolved Questions". Update "Active State" to reflect current state. Remove information only if it is clearly obsolete.
 
 {_template_sections}"""
         else:
@@ -1633,10 +1621,9 @@ The user has requested that this compaction PRIORITISE preserving all informatio
                 _merge_summary_into_tail = True
 
         # When the summary lands as a standalone role="user" message,
-        # weak models read the verbatim "## Active Task" quote of a past
-        # user request as fresh input (#11475, #14521). Append the explicit
-        # end marker — the same one used in the merge-into-tail path — so
-        # the model has a clear "summary above, not new input" signal.
+        # weak models may misread summary content as fresh input (#11475, #14521).
+        # Append the explicit end marker — the same one used in the merge-into-tail
+        # path — so the model has a clear "summary above, not new input" signal.
         if not _merge_summary_into_tail and summary_role == "user":
             summary = (
                 summary
