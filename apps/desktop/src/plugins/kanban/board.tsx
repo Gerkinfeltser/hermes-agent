@@ -457,7 +457,7 @@ export function Column({
           </span>
         </Tip>
         <span className="text-[0.625rem] tabular-nums text-(--ui-text-quaternary)">{column.tasks.length}</span>
-        <span className="ml-auto grid size-5 place-items-center rounded text-(--ui-text-tertiary) opacity-0 transition-opacity hover:bg-(--chrome-action-hover) hover:text-foreground group-hover/col:opacity-100 group-focus-within/lane:opacity-100">
+        <span className="ml-auto grid size-5 place-items-center rounded text-(--ui-text-tertiary) opacity-0 transition-opacity hover:bg-(--chrome-action-hover) hover:text-foreground group-hover/col:opacity-100 group-focus-visible/lane:opacity-100">
           <Codicon name="chevron-left" size="0.75rem" />
         </span>
       </button>

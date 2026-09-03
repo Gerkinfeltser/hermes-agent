@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import type { ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -141,15 +142,16 @@ describe('kanban column lane controls', () => {
     expect(cls).toContain('focus-visible:ring-ring/40')
   })
 
-  it('does not need custom keyboard handlers for Enter or Space', () => {
+  it('activates natively on Enter and Space via keyboard', async () => {
+    const user = userEvent.setup()
     const { onToggle } = renderColumn(false)
     const collapse = screen.getByRole('button', { name: 'Collapse Ready' })
 
-    fireEvent.keyDown(collapse, { key: 'Enter' })
-    fireEvent.keyUp(collapse, { key: 'Enter' })
-    fireEvent.keyDown(collapse, { key: ' ' })
-    fireEvent.keyUp(collapse, { key: ' ' })
+    collapse.focus()
+    await user.keyboard('{Enter}')
+    expect(onToggle).toHaveBeenCalledTimes(1)
 
-    expect(onToggle).not.toHaveBeenCalled()
+    await user.keyboard(' ')
+    expect(onToggle).toHaveBeenCalledTimes(2)
   })
 })
